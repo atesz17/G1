@@ -41,6 +41,19 @@
 // negativ elojellel szamoljak el es ezzel parhuzamosan eljaras is indul velem szemben.
 //=============================================================================================
 
+// REMOVE =============
+#warning "REMOVE IOSTREAM AND LOGGER"
+#include <iostream>
+using namespace std;
+
+void nwLogMousePos(int x, int y)
+{
+  cout << endl << "================" << endl;
+  cout << "X: " << x << endl;
+  cout << "Y: " << y << endl;
+  cout << "================" << endl;
+}
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdlib.h>
@@ -115,44 +128,59 @@ struct Color {
    }
 };
 
-const int screenWidth = 600;	// alkalmazás ablak felbontása
+const int screenWidth = 600;  // alkalmazás ablak felbontása
 const int screenHeight = 600;
+const float RADIUS = 5.0f;
+const Color RED_COLOR(1, 0, 0);
+const Color WHITE_COLOR(1, 1, 1);
 
+void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColor)
+{
+  int res = 16;
 
-Color image[screenWidth*screenHeight];	// egy alkalmazás ablaknyi kép
+  glBegin(GL_TRIANGLE_FAN);
+    glColor3f(fillColor.r, fillColor.g, fillColor.b);
+    glVertex2f(center.x, center.y);
+    for(int i = 0;i<=res;i++)
+    {
+      float angle = float(i) / res * 2.0f * M_PI;
+      glVertex2f(center.x + radius * cos(angle), center.y + radius * sin(angle));
+    }
+  glEnd();
 
+  glBegin(GL_LINE_LOOP);
+    glColor3f(borderColor.r, borderColor.g, borderColor.b);
+    for(int i =0;i<res;i++)
+    {
+      float angle = float(i) / res * 2.0f * M_PI;
+      glVertex2f(center.x + radius * cos(angle), center.y + radius * sin(angle));
+    }
+  glEnd();
+
+  glutSwapBuffers();
+
+}
+
+Vector nwWindowToWorld(int x, int y)
+{
+  float scale = 10.0f/6.0f;
+  return Vector(x * scale, y * scale);
+}
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
-void onInitialization( ) { 
-	glViewport(0, 0, screenWidth, screenHeight);
-
-    // Peldakent keszitunk egy kepet az operativ memoriaba
-    for(int Y = 0; Y < screenHeight; Y++)
-		for(int X = 0; X < screenWidth; X++)
-			image[Y*screenWidth + X] = Color((float)X/screenWidth, (float)Y/screenHeight, 0);
-
+void onInitialization( ) {
 }
 
 // Rajzolas, ha az alkalmazas ablak ervenytelenne valik, akkor ez a fuggveny hivodik meg
 void onDisplay( ) {
-    glClearColor(0.1f, 0.2f, 0.3f, 1.0f);		// torlesi szin beallitasa
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // kepernyo torles
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluOrtho2D(0, 1000, 1000, 0);
 
-    // ..
+  glClearColor(0.1f, 0.2f, 0.3f, 1.0f);		// torlesi szin beallitasa
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // kepernyo torles
 
-    // Peldakent atmasoljuk a kepet a rasztertarba
-    glDrawPixels(screenWidth, screenHeight, GL_RGB, GL_FLOAT, image);
-    // Majd rajzolunk egy kek haromszoget
-	glColor3f(0, 0, 1);
-	glBegin(GL_TRIANGLES);
-		glVertex2f(-0.2f, -0.2f);
-		glVertex2f( 0.2f, -0.2f);
-		glVertex2f( 0.0f,  0.2f);
-	glEnd( );
-
-    // ...
-
-    glutSwapBuffers();     				// Buffercsere: rajzolas vege
+  glutSwapBuffers();     				// Buffercsere: rajzolas vege
 
 }
 
@@ -169,8 +197,12 @@ void onKeyboardUp(unsigned char key, int x, int y) {
 
 // Eger esemenyeket lekezelo fuggveny
 void onMouse(int button, int state, int x, int y) {
-    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)   // A GLUT_LEFT_BUTTON / GLUT_RIGHT_BUTTON illetve GLUT_DOWN / GLUT_UP
-		glutPostRedisplay( ); 						 // Ilyenkor rajzold ujra a kepet
+    if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+    {
+      nwLogMousePos(x, y);
+      Vector clickPos = nwWindowToWorld(x, y);
+      nwdrawCircle(Vector(clickPos.x, clickPos.y), RADIUS, RED_COLOR, WHITE_COLOR);
+    }
 }
 
 // Eger mozgast lekezelo fuggveny
