@@ -41,6 +41,13 @@
 // negativ elojellel szamoljak el es ezzel parhuzamosan eljaras is indul velem szemben.
 //=============================================================================================
 
+//Ekozott levot majd torolni
+#warning "Torolni kell majd az iostream include-ot es a using-ot"
+#include <iostream>
+
+using namespace std;
+//==========================
+
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <stdlib.h>
@@ -121,7 +128,13 @@ const int screenHeight = 600;
 
 Color image[screenWidth*screenHeight];	// egy alkalmazás ablaknyi kép
 
-
+Vector global_xy_to_float(int x, int y)
+{
+  Vector ret;
+  ret.x = (float)(x - screenWidth/2) / (screenWidth/2);
+  ret.y = (-1)*(float)(y - screenWidth/2) / (screenWidth/2);
+  return ret;
+}
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) { 
 	glViewport(0, 0, screenWidth, screenHeight);
@@ -148,7 +161,14 @@ void onDisplay( ) {
 		glVertex2f(-0.2f, -0.2f);
 		glVertex2f( 0.2f, -0.2f);
 		glVertex2f( 0.0f,  0.2f);
+
 	glEnd( );
+  glColor3f(0.5f, 0.5f, 0.5f);
+  glBegin(GL_TRIANGLES);
+    glVertex2f(-1, 1);
+    glVertex2f(1, 1);
+    glVertex2f(0, 0);
+  glEnd();
 
     // ...
 
@@ -169,8 +189,16 @@ void onKeyboardUp(unsigned char key, int x, int y) {
 
 // Eger esemenyeket lekezelo fuggveny
 void onMouse(int button, int state, int x, int y) {
+  /*
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)   // A GLUT_LEFT_BUTTON / GLUT_RIGHT_BUTTON illetve GLUT_DOWN / GLUT_UP
 		glutPostRedisplay( ); 						 // Ilyenkor rajzold ujra a kepet
+    */
+  if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
+  {
+    cout << "x: " << x << ", y: " << y << endl;
+    glColor3f(float(x)/screenWidth, float(y)/screenHeight, 0);
+    cout << global_xy_to_float(x, y).x << ", " << global_xy_to_float(x, y).y;
+  }
 }
 
 // Eger mozgast lekezelo fuggveny
