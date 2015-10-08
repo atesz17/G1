@@ -135,14 +135,17 @@ Vector global_xy_to_float(int x, int y)
   ret.y = (-1)*(float)(y - screenWidth/2) / (screenWidth/2);
   return ret;
 }
+
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) { 
 	glViewport(0, 0, screenWidth, screenHeight);
 
     // Peldakent keszitunk egy kepet az operativ memoriaba
+  /*
     for(int Y = 0; Y < screenHeight; Y++)
 		for(int X = 0; X < screenWidth; X++)
 			image[Y*screenWidth + X] = Color((float)X/screenWidth, (float)Y/screenHeight, 0);
+  */
 
 }
 
@@ -154,23 +157,8 @@ void onDisplay( ) {
     // ..
 
     // Peldakent atmasoljuk a kepet a rasztertarba
-    glDrawPixels(screenWidth, screenHeight, GL_RGB, GL_FLOAT, image);
-    // Majd rajzolunk egy kek haromszoget
-	glColor3f(0, 0, 1);
-	glBegin(GL_TRIANGLES);
-		glVertex2f(-0.2f, -0.2f);
-		glVertex2f( 0.2f, -0.2f);
-		glVertex2f( 0.0f,  0.2f);
+    //glDrawPixels(screenWidth, screenHeight, GL_RGB, GL_FLOAT, image);
 
-	glEnd( );
-  glColor3f(0.5f, 0.5f, 0.5f);
-  glBegin(GL_TRIANGLES);
-    glVertex2f(-1, 1);
-    glVertex2f(1, 1);
-    glVertex2f(0, 0);
-  glEnd();
-
-    // ...
 
     glutSwapBuffers();     				// Buffercsere: rajzolas vege
 
@@ -195,9 +183,9 @@ void onMouse(int button, int state, int x, int y) {
     */
   if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
   {
-    cout << "x: " << x << ", y: " << y << endl;
-    glColor3f(float(x)/screenWidth, float(y)/screenHeight, 0);
-    cout << global_xy_to_float(x, y).x << ", " << global_xy_to_float(x, y).y;
+    Vector clickPos = global_xy_to_float(x, y);
+    cout << "x: " << x << ", y: " << y << ", rel coord --> x: " << clickPos.x << ", y: " << clickPos.y << endl;
+    glutSwapBuffers();            // Buffercsere: rajzolas vege
   }
 }
 
