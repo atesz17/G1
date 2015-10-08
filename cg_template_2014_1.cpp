@@ -46,6 +46,17 @@
 #include <iostream>
 
 using namespace std;
+
+void logCoords(int winX, int winY, float relX, float relY)
+{
+  cout << endl << "==========================" << endl;
+  cout << "Window absolute coords:" << endl;
+  cout << " X: " << winX << "\tY: " << winY << endl;
+  cout << "Viewport relative coords:" << endl;
+  cout << " X: " << relX << "\tY: " << relY;
+  cout << endl << "==========================" << endl;
+}
+
 //==========================
 
 #define _USE_MATH_DEFINES
