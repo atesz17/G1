@@ -41,18 +41,7 @@
 // negativ elojellel szamoljak el es ezzel parhuzamosan eljaras is indul velem szemben.
 //=============================================================================================
 
-// REMOVE =============
-#warning "REMOVE IOSTREAM AND LOGGER"
-#include <iostream>
-using namespace std;
 
-void nwLogMousePos(int x, int y)
-{
-  cout << endl << "================" << endl;
-  cout << "X: " << x << endl;
-  cout << "Y: " << y << endl;
-  cout << "================" << endl;
-}
 
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -74,6 +63,9 @@ void nwLogMousePos(int x, int y)
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Innentol modosithatod...
+
+#warning "LOGGER FORWARD DECL"
+void nwLogMousePos(int x, int y);
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -143,7 +135,7 @@ long animationStartTime = 0;
 Vector scaling(1, 1, 1);
 Vector translating(0, 0, 0);
 
-const int MAX_CTRL_POINTS_NUM = 20;
+const int MAX_CTRL_POINTS_NUM = 50;
 
 struct ControlPoints  {
   Vector points[MAX_CTRL_POINTS_NUM];
@@ -153,7 +145,7 @@ struct ControlPoints  {
 
   void push(Vector v)
   {
-    if (size - 1 != MAX_CTRL_POINTS_NUM)
+    if (size < MAX_CTRL_POINTS_NUM)
     {
       points[size] = v;
       size++;
@@ -185,24 +177,25 @@ void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColo
       glVertex2f(center.x + radius * cos(angle), center.y + radius * sin(angle));
     }
   glEnd();
-
-  //glutSwapBuffers();
-
 }
 
 Vector nwWindowToWorld(int x, int y)
 {
   //float scale = 10.0f/6.0f;
   float scaleX = float(worldSize.x)/screenWidth/scaling.x;
-  float scaleY = float(worldSize.y)/screenHeight/scaling.y; 
-  return Vector(x * scaleX, y * scaleY);
+  float scaleY = float(worldSize.y)/screenHeight/scaling.y;
+  float worldX = x * scaleX - 500.0f;
+  float worldY = (-1) * (y * scaleY - 500.0f); 
+  return Vector(worldX, worldY);
+  //return Vector(x * scaleX, y * scaleY);
 }
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
-  gluOrtho2D(0, worldSize.x, worldSize.y, 0); // left right bottom top
+  gluOrtho2D(worldSize.x/-2.0f, worldSize.x/2.0f, worldSize.y/-2.0f, worldSize.y/2.0f); // left right bottom top
+  //gluOrtho2D(0, worldSize.x, worldSize.y, 0); // left right bottom top
 }
 
 // Rajzolas, ha az alkalmazas ablak ervenytelenne valik, akkor ez a fuggveny hivodik meg
@@ -215,16 +208,16 @@ void onDisplay( ) {
 
   glScalef(scaling.x, scaling.y, 1);
 
+  glBegin(GL_TRIANGLES);
+    glVertex2i(0, 0);
+    glVertex2i(-500, -500);
+    glVertex2i(200, 300);
+  glEnd();
+
   for (int i = 0;i<controlPoints.size;i++)
   {
     nwdrawCircle(controlPoints.points[i], RADIUS, RED_COLOR, WHITE_COLOR);
   }
-
-  glBegin(GL_TRIANGLES);
-    glVertex2i(0, 0);
-    glVertex2i(0, 100);
-    glVertex2i(200, 300);
-  glEnd();
 
   glutSwapBuffers();     				// Buffercsere: rajzolas vege
 
@@ -234,14 +227,12 @@ void onDisplay( ) {
 void onKeyboard(unsigned char key, int x, int y) {
     if (key == 'd')
     {
-      cout << "EVENT: glutPostRedisplay" << endl;
       glutPostRedisplay( );
     }
     else if (key == ' ')
     {
       if (!startMovingAround) // csak 1x lehessen lenyomni a space-t
       {
-        cout << "EVENT: startMovingAround" << endl;
         startMovingAround = true;
         animationStartTime = glutGet(GLUT_ELAPSED_TIME);
       }
@@ -281,6 +272,24 @@ void onIdle( ) {
       glutPostRedisplay();
      }
 }
+
+// REMOVE =======================================================
+#warning "REMOVE IOSTREAM AND LOGGER"
+#include <iostream>
+using namespace std;
+
+void nwLogMousePos(int x, int y)
+{
+  cout << endl << "================" << endl;
+  cout << "WINDOW:" << endl;
+  cout << " X: " << x << endl;
+  cout << " Y: " << y << endl;
+  cout << "WORLD:" << endl;
+  cout << " X: " << nwWindowToWorld(x, y).x << endl;
+  cout << " Y: " << nwWindowToWorld(x, y).y << endl;
+  cout << "================" << endl;
+}
+//================================================================
 
 // ...Idaig modosithatod
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
