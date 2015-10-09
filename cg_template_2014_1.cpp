@@ -201,7 +201,7 @@ void onMouse(int button, int state, int x, int y) {
     {
       nwLogMousePos(x, y);
       Vector clickPos = nwWindowToWorld(x, y);
-      nwdrawCircle(Vector(clickPos.x, clickPos.y), RADIUS, RED_COLOR, WHITE_COLOR);
+      nwdrawCircle(clickPos, RADIUS, RED_COLOR, WHITE_COLOR);
     }
 }
 
