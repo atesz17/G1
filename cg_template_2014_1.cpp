@@ -130,9 +130,18 @@ struct Color {
 
 const int screenWidth = 600;  // alkalmazás ablak felbontása
 const int screenHeight = 600;
+
+const Vector worldSize(1000, 1000);
+
 const float RADIUS = 5.0f;
 const Color RED_COLOR(1, 0, 0);
 const Color WHITE_COLOR(1, 1, 1);
+
+bool startMovingAround = false;
+long animationStartTime = 0;
+
+Vector scaling(1, 1, 1);
+Vector translating(0, 0, 0);
 
 void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColor)
 {
@@ -163,22 +172,34 @@ void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColo
 
 Vector nwWindowToWorld(int x, int y)
 {
-  float scale = 10.0f/6.0f;
-  return Vector(x * scale, y * scale);
+  //float scale = 10.0f/6.0f;
+  float scaleX = float(worldSize.x)/screenWidth/scaling.x;
+  float scaleY = float(worldSize.y)/screenHeight/scaling.y; 
+  return Vector(x * scaleX, y * scaleY);
 }
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) {
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluOrtho2D(0, worldSize.x, worldSize.y, 0); // left right bottom top
 }
 
 // Rajzolas, ha az alkalmazas ablak ervenytelenne valik, akkor ez a fuggveny hivodik meg
 void onDisplay( ) {
-  glMatrixMode(GL_PROJECTION);
-  glLoadIdentity();
-  gluOrtho2D(0, 1000, 1000, 0);
-
   glClearColor(0.1f, 0.2f, 0.3f, 1.0f);		// torlesi szin beallitasa
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // kepernyo torles
+
+  glMatrixMode(GL_MODELVIEW);
+  glLoadIdentity();
+
+  glScalef(scaling.x, scaling.y, 1);
+
+  glBegin(GL_TRIANGLES);
+    glVertex2i(0, 0);
+    glVertex2i(0, 100);
+    glVertex2i(200, 300);
+  glEnd();
 
   glutSwapBuffers();     				// Buffercsere: rajzolas vege
 
@@ -186,7 +207,20 @@ void onDisplay( ) {
 
 // Billentyuzet esemenyeket lekezelo fuggveny (lenyomas)
 void onKeyboard(unsigned char key, int x, int y) {
-    if (key == 'd') glutPostRedisplay( ); 		// d beture rajzold ujra a kepet
+    if (key == 'd')
+    {
+      cout << "EVENT: glutPostRedisplay" << endl;
+      glutPostRedisplay( );
+    }
+    else if (key == ' ')
+    {
+      if (!startMovingAround) // csak 1x lehessen lenyomni a space-t
+      {
+        cout << "EVENT: startMovingAround" << endl;
+        startMovingAround = true;
+        animationStartTime = glutGet(GLUT_ELAPSED_TIME);
+      }
+    }
 
 }
 
@@ -214,7 +248,12 @@ void onMouseMotion(int x, int y)
 // `Idle' esemenykezelo, jelzi, hogy az ido telik, az Idle esemenyek frekvenciajara csak a 0 a garantalt minimalis ertek
 void onIdle( ) {
      long time = glutGet(GLUT_ELAPSED_TIME);		// program inditasa ota eltelt ido
-
+     if (startMovingAround)
+     {
+      scaling.x = 2;
+      scaling.y = 2;
+      glutPostRedisplay();
+     }
 }
 
 // ...Idaig modosithatod
