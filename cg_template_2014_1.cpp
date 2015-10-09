@@ -143,6 +143,26 @@ long animationStartTime = 0;
 Vector scaling(1, 1, 1);
 Vector translating(0, 0, 0);
 
+const int MAX_CTRL_POINTS_NUM = 20;
+
+struct ControlPoints  {
+  Vector points[MAX_CTRL_POINTS_NUM];
+  int size;
+
+  ControlPoints() : size(0) {}
+
+  void push(Vector v)
+  {
+    if (size - 1 != MAX_CTRL_POINTS_NUM)
+    {
+      points[size] = v;
+      size++;
+    }
+  }
+};
+
+ControlPoints controlPoints;
+
 void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColor)
 {
   int res = 16;
@@ -166,7 +186,7 @@ void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColo
     }
   glEnd();
 
-  glutSwapBuffers();
+  //glutSwapBuffers();
 
 }
 
@@ -194,6 +214,11 @@ void onDisplay( ) {
   glLoadIdentity();
 
   glScalef(scaling.x, scaling.y, 1);
+
+  for (int i = 0;i<controlPoints.size;i++)
+  {
+    nwdrawCircle(controlPoints.points[i], RADIUS, RED_COLOR, WHITE_COLOR);
+  }
 
   glBegin(GL_TRIANGLES);
     glVertex2i(0, 0);
@@ -235,7 +260,8 @@ void onMouse(int button, int state, int x, int y) {
     {
       nwLogMousePos(x, y);
       Vector clickPos = nwWindowToWorld(x, y);
-      nwdrawCircle(clickPos, RADIUS, RED_COLOR, WHITE_COLOR);
+      controlPoints.push(Vector(clickPos.x, clickPos.y));
+      glutPostRedisplay();
     }
 }
 
