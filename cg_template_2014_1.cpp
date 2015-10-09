@@ -154,6 +154,8 @@ struct ControlPoints  {
 };
 
 ControlPoints controlPoints;
+Vector        straightLinePoints[2];
+bool          drawStraightLine = false;
 
 void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColor)
 {
@@ -218,7 +220,14 @@ void onDisplay( ) {
   {
     nwdrawCircle(controlPoints.points[i], RADIUS, RED_COLOR, WHITE_COLOR);
   }
-
+  if (drawStraightLine)
+  {
+    glColor3f(0,1,0);
+    glBegin(GL_LINES);
+      glVertex2f(straightLinePoints[0].x, straightLinePoints[0].y);
+      glVertex2f(straightLinePoints[1].x, straightLinePoints[1].y);
+    glEnd();
+  }
   glutSwapBuffers();     				// Buffercsere: rajzolas vege
 
 }
@@ -252,6 +261,15 @@ void onMouse(int button, int state, int x, int y) {
       nwLogMousePos(x, y);
       Vector clickPos = nwWindowToWorld(x, y);
       controlPoints.push(Vector(clickPos.x, clickPos.y));
+      if (!drawStraightLine)
+      {
+        if (controlPoints.size == 2)
+        {
+          straightLinePoints[0] = controlPoints.points[0];
+          straightLinePoints[1] = controlPoints.points[1];
+          drawStraightLine = true;
+        }
+      }
       glutPostRedisplay();
     }
 }
