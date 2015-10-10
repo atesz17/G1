@@ -66,6 +66,8 @@
 
 #warning "LOGGER FORWARD DECL"
 void nwLogMousePos(int x, int y);
+#include <iostream>
+using namespace std;
 
 //--------------------------------------------------------
 // 3D Vektor
@@ -154,8 +156,48 @@ struct ControlPoints  {
 };
 
 ControlPoints controlPoints;
+
 Vector        straightLinePoints[2];
 bool          drawStraightLine = false;
+
+Vector        parabolaPoints[3];
+bool          drawParabola = false;
+
+Vector nwWindowToWorld(int x, int y)
+{
+  //float scale = 10.0f/6.0f;
+  float scaleX = float(worldSize.x)/screenWidth/scaling.x;
+  float scaleY = float(worldSize.y)/screenHeight/scaling.y;
+  float worldX = x * scaleX - 500.0f;
+  float worldY = (-1) * (y * scaleY - 500.0f); 
+  return Vector(worldX, worldY);
+  //return Vector(x * scaleX, y * scaleY);
+}
+
+void nwDrawParabola(Vector parabolaPoints[])
+{
+  //Vector normalVec((-1)*parabolaPoints[2].y - parabolaPoints[1].y, parabolaPoints[2].x - parabolaPoints[1].x);
+  // Ax + By + C = 
+  cout << "WTF";
+  int A = (-1) * parabolaPoints[1].y - parabolaPoints[0].y;
+  int B = parabolaPoints[1].x - parabolaPoints[0].x;
+  int C = (-1) * (A * parabolaPoints[0].x + B * parabolaPoints[0].y);
+  Vector focusPoint = parabolaPoints[2];
+  glBegin(GL_POINTS);
+  for (int x = -500;x<500;x++)
+  {
+    for(int y=-500;y<500;y++)
+    {
+      float eqLeft = (fabs(A*x + B*y + C))/sqrt(A*A + B*B);
+      float eqRight = sqrt((x-focusPoint.x)*(x-focusPoint.x) + (y-focusPoint.y)*(y-focusPoint.y));
+      if (eqLeft - eqRight < fabs(1))
+      {
+        glVertex2f(x, y);
+      }
+    }
+  }
+  glEnd();
+}
 
 void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColor)
 {
@@ -181,16 +223,7 @@ void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColo
   glEnd();
 }
 
-Vector nwWindowToWorld(int x, int y)
-{
-  //float scale = 10.0f/6.0f;
-  float scaleX = float(worldSize.x)/screenWidth/scaling.x;
-  float scaleY = float(worldSize.y)/screenHeight/scaling.y;
-  float worldX = x * scaleX - 500.0f;
-  float worldY = (-1) * (y * scaleY - 500.0f); 
-  return Vector(worldX, worldY);
-  //return Vector(x * scaleX, y * scaleY);
-}
+
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) {
@@ -216,10 +249,13 @@ void onDisplay( ) {
     glVertex2i(200, 300);
   glEnd();
 
+  // Korok kirajzolasa
   for (int i = 0;i<controlPoints.size;i++)
   {
     nwdrawCircle(controlPoints.points[i], RADIUS, RED_COLOR, WHITE_COLOR);
   }
+
+  // Egyenes vonal kirajzolasa
   if (drawStraightLine)
   {
     glColor3f(0,1,0);
@@ -228,6 +264,12 @@ void onDisplay( ) {
       glVertex2f(straightLinePoints[1].x, straightLinePoints[1].y);
     glEnd();
   }
+
+  if (drawParabola)
+  {
+    nwDrawParabola(parabolaPoints);
+  }
+
   glutSwapBuffers();     				// Buffercsere: rajzolas vege
 
 }
@@ -269,6 +311,13 @@ void onMouse(int button, int state, int x, int y) {
           straightLinePoints[1] = controlPoints.points[1];
           drawStraightLine = true;
         }
+        if (controlPoints.size == 3)
+        {
+          parabolaPoints[0] = straightLinePoints[0];
+          parabolaPoints[1] = straightLinePoints[0];
+          parabolaPoints[2] = controlPoints.points[2];
+          drawParabola = true;
+        }
       }
       glutPostRedisplay();
     }
@@ -293,8 +342,6 @@ void onIdle( ) {
 
 // REMOVE =======================================================
 #warning "REMOVE IOSTREAM AND LOGGER"
-#include <iostream>
-using namespace std;
 
 void nwLogMousePos(int x, int y)
 {
