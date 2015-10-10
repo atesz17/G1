@@ -264,7 +264,8 @@ void onDisplay( ) {
 
   if (drawParabola)
   {
-    nwDrawParabola(parabolaPoints);
+	  glColor3f(1, 1, 0);
+	  nwDrawParabola(parabolaPoints);
   }
 
   glutSwapBuffers();     				// Buffercsere: rajzolas vege
