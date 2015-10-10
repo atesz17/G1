@@ -171,17 +171,13 @@ Vector nwWindowToWorld(int x, int y)
   float worldX = x * scaleX - 500.0f;
   float worldY = (-1) * (y * scaleY - 500.0f);
   return Vector(worldX, worldY);
-  //return Vector(x * scaleX, y * scaleY);
 }
 
 void nwDrawParabola(Vector parabolaPoints[])
 {
-  //Vector normalVec((-1)*parabolaPoints[2].y - parabolaPoints[1].y, parabolaPoints[2].x - parabolaPoints[1].x);
-  // Ax + By + C =
-  cout << "WTF";
-  int A = (-1) * parabolaPoints[1].y - parabolaPoints[0].y;
-  int B = parabolaPoints[1].x - parabolaPoints[0].x;
-  int C = (-1) * (A * parabolaPoints[0].x + B * parabolaPoints[0].y);
+  float A = (-1) * (parabolaPoints[1].y - parabolaPoints[0].y);
+  float B = parabolaPoints[1].x - parabolaPoints[0].x;
+  float C = (-1) * (A * parabolaPoints[0].x + B * parabolaPoints[0].y);
   Vector focusPoint = parabolaPoints[2];
   glBegin(GL_POINTS);
   for (int x = -500;x<500;x++)
@@ -190,7 +186,7 @@ void nwDrawParabola(Vector parabolaPoints[])
     {
       float eqLeft = (fabs(A*x + B*y + C))/sqrt(A*A + B*B);
       float eqRight = sqrt((x-focusPoint.x)*(x-focusPoint.x) + (y-focusPoint.y)*(y-focusPoint.y));
-      if ((eqLeft - eqRight < fabs(1)) && (eqLeft - eqRight > 0))
+      if ((eqLeft - eqRight < fabs(1.5)) && (eqLeft - eqRight > 0))
       {
         glVertex2f(x, y);
       }
@@ -230,7 +226,6 @@ void onInitialization( ) {
   glMatrixMode(GL_PROJECTION);
   glLoadIdentity();
   gluOrtho2D(worldSize.x/-2.0f, worldSize.x/2.0f, worldSize.y/-2.0f, worldSize.y/2.0f); // left right bottom top
-  //gluOrtho2D(0, worldSize.x, worldSize.y, 0); // left right bottom top
 }
 
 // Rajzolas, ha az alkalmazas ablak ervenytelenne valik, akkor ez a fuggveny hivodik meg
@@ -243,11 +238,13 @@ void onDisplay( ) {
 
   glScalef(scaling.x, scaling.y, 1);
 
+  /*
   glBegin(GL_TRIANGLES);
     glVertex2i(0, 0);
     glVertex2i(-500, -500);
     glVertex2i(200, 300);
   glEnd();
+  */
 
   // Korok kirajzolasa
   for (int i = 0;i<controlPoints.size;i++)
@@ -312,7 +309,7 @@ void onMouse(int button, int state, int x, int y) {
       if (controlPoints.size == 3 && !drawParabola)
       {
     	  parabolaPoints[0] = straightLinePoints[0];
-    	  parabolaPoints[1] = straightLinePoints[0];
+    	  parabolaPoints[1] = straightLinePoints[1];
     	  parabolaPoints[2] = controlPoints.points[2];
     	  drawParabola = true;
 	  }
