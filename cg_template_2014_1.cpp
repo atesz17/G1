@@ -173,7 +173,7 @@ Vector nwWindowToWorld(int x, int y)
   return Vector(worldX, worldY);
 }
 
-void nwDrawParabola(Vector parabolaPoints[])
+void nwDrawParabola(Vector parabolaPoints[], bool drawInside=true)
 {
   float A = (-1) * (parabolaPoints[1].y - parabolaPoints[0].y);
   float B = parabolaPoints[1].x - parabolaPoints[0].x;
@@ -187,9 +187,19 @@ void nwDrawParabola(Vector parabolaPoints[])
       float eqLeft = (fabs(A*x + B*y + C))/sqrt(A*A + B*B);
       float eqRight = sqrt((x-focusPoint.x)*(x-focusPoint.x) + (y-focusPoint.y)*(y-focusPoint.y));
       //if (!(eqLeft - eqRight < fabs(1.5)) && (eqLeft - eqRight > 0))
-      if (eqLeft - eqRight > fabs(1.5))
+      if (drawInside)
       {
-        glVertex2f(x, y);
+    	  if (eqLeft - eqRight > fabs(1.5))
+    	  {
+    		  glVertex2f(x, y);
+    	  }
+      }
+      else
+      {
+    	  if (!(eqLeft - eqRight > fabs(1.5))) // ha nem a belsejet, akkor a kulso reszt rajzoljuk
+		  {
+			  glVertex2f(x, y);
+		  }
       }
     }
   }
@@ -247,12 +257,6 @@ void onDisplay( ) {
   glEnd();
   */
 
-  // Korok kirajzolasa
-  for (int i = 0;i<controlPoints.size;i++)
-  {
-    nwdrawCircle(controlPoints.points[i], RADIUS, RED_COLOR, WHITE_COLOR);
-  }
-
   // Egyenes vonal kirajzolasa
   if (drawStraightLine)
   {
@@ -267,6 +271,14 @@ void onDisplay( ) {
   {
 	  glColor3f(1, 1, 0);
 	  nwDrawParabola(parabolaPoints);
+	  glColor3f(0, 1, 1);
+	  nwDrawParabola(parabolaPoints, false);
+  }
+
+  // Korok kirajzolasa
+  for (int i = 0;i<controlPoints.size;i++)
+  {
+	  nwdrawCircle(controlPoints.points[i], RADIUS, RED_COLOR, WHITE_COLOR);
   }
 
   glutSwapBuffers();     				// Buffercsere: rajzolas vege
