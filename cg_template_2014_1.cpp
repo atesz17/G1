@@ -180,9 +180,9 @@ void nwDrawParabola(Vector parabolaPoints[], bool drawInside=true)
   float C = (-1) * (A * parabolaPoints[0].x + B * parabolaPoints[0].y);
   Vector focusPoint = parabolaPoints[2];
   glBegin(GL_POINTS);
-  for (int x = -500;x<500;x++)
+  for (float x = -500;x<500;x+=0.5f)
   {
-    for(int y=-500;y<500;y++)
+    for(float y=-500;y<500;y+=0.5f)
     {
       float eqLeft = (fabs(A*x + B*y + C))/sqrt(A*A + B*B);
       float eqRight = sqrt((x-focusPoint.x)*(x-focusPoint.x) + (y-focusPoint.y)*(y-focusPoint.y));
