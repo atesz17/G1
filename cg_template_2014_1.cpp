@@ -248,6 +248,7 @@ void onDisplay( ) {
   glLoadIdentity();
 
   glScalef(scaling.x, scaling.y, 1);
+  glTranslatef(translating.x, translating.y, 0);
 
   /*
   glBegin(GL_TRIANGLES);
