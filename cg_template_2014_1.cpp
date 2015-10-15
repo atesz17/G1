@@ -168,8 +168,8 @@ Vector nwWindowToWorld(int x, int y)
   //float scale = 10.0f/6.0f;
   float scaleX = float(worldSize.x)/screenWidth/scaling.x;
   float scaleY = float(worldSize.y)/screenHeight/scaling.y;
-  float worldX = x * scaleX - 1.0f/scaling.x * worldSize.x/2;
-  float worldY = (-1) * (y * scaleY - 1.0f/scaling.y * worldSize.y/2);
+  float worldX = x * scaleX - 1.0f/scaling.x * worldSize.x/2 - translating.x; // mert a window klikk olyan jol van helyezve a window x y tengelyen
+  float worldY = (-1) * (y * scaleY - 1.0f/scaling.y * worldSize.y/2 + translating.y);
   return Vector(worldX, worldY);
 }
 
@@ -335,6 +335,8 @@ void onIdle( ) {
      {
       scaling.x = 2;
       scaling.y = 2;
+      translating.x -= 2;
+      translating.y -= 3;
       glutPostRedisplay();
      }
 }
