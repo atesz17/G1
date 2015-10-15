@@ -168,42 +168,42 @@ Vector nwWindowToWorld(int x, int y)
   //float scale = 10.0f/6.0f;
   float scaleX = float(worldSize.x)/screenWidth/scaling.x;
   float scaleY = float(worldSize.y)/screenHeight/scaling.y;
-  float worldX = x * scaleX - 500.0f;
-  float worldY = (-1) * (y * scaleY - 500.0f);
+  float worldX = x * scaleX - 1.0f/scaling.x * worldSize.x/2;
+  float worldY = (-1) * (y * scaleY - 1.0f/scaling.y * worldSize.y/2);
   return Vector(worldX, worldY);
 }
 
 void nwDrawParabola(Vector parabolaPoints[], bool drawInside=true)
 {
-  float A = (-1) * (parabolaPoints[1].y - parabolaPoints[0].y);
-  float B = parabolaPoints[1].x - parabolaPoints[0].x;
-  float C = (-1) * (A * parabolaPoints[0].x + B * parabolaPoints[0].y);
-  Vector focusPoint = parabolaPoints[2];
-  glBegin(GL_POINTS);
-  for (float x = -500;x<500;x+=0.5f)
-  {
-    for(float y=-500;y<500;y+=0.5f)
-    {
-      float eqLeft = (fabs(A*x + B*y + C))/sqrt(A*A + B*B);
-      float eqRight = sqrt((x-focusPoint.x)*(x-focusPoint.x) + (y-focusPoint.y)*(y-focusPoint.y));
-      //if (!(eqLeft - eqRight < fabs(1.5)) && (eqLeft - eqRight > 0))
-      if (drawInside)
-      {
-    	  if (eqLeft - eqRight > fabs(1.5))
-    	  {
-    		  glVertex2f(x, y);
-    	  }
-      }
-      else
-      {
-    	  if (!(eqLeft - eqRight > fabs(1.5))) // ha nem a belsejet, akkor a kulso reszt rajzoljuk
-		  {
-			  glVertex2f(x, y);
-		  }
-      }
-    }
-  }
-  glEnd();
+	float A = (-1) * (parabolaPoints[1].y - parabolaPoints[0].y);
+	float B = parabolaPoints[1].x - parabolaPoints[0].x;
+	float C = (-1) * (A * parabolaPoints[0].x + B * parabolaPoints[0].y);
+	Vector focusPoint = parabolaPoints[2];
+	glBegin(GL_POINTS);
+	for (int x = 0;x < screenWidth;x++)
+	{
+		for (int y = 0;y < screenHeight;y++)
+		{
+			Vector worldPos = nwWindowToWorld(x, y);
+			float eqLeft = (fabs(A*worldPos.x + B*worldPos.y + C))/sqrt(A*A + B*B);
+			float eqRight = sqrt((worldPos.x-focusPoint.x)*(worldPos.x-focusPoint.x) + (worldPos.y-focusPoint.y)*(worldPos.y-focusPoint.y));
+			if (drawInside)
+			  {
+				  if (eqLeft - eqRight > 0)
+				  {
+					  glVertex2f(worldPos.x, worldPos.y);
+				  }
+			  }
+			  else
+			  {
+				  if (!(eqLeft - eqRight > 0)) // ha nem a belsejet, akkor a kulso reszt rajzoljuk
+				  {
+					  glVertex2f(worldPos.x, worldPos.y);
+				  }
+			  }
+		}
+	}
+	glEnd();
 }
 
 void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColor)
@@ -250,15 +250,6 @@ void onDisplay( ) {
   glScalef(scaling.x, scaling.y, 1);
   glTranslatef(translating.x, translating.y, 0);
 
-  /*
-  glBegin(GL_TRIANGLES);
-    glVertex2i(0, 0);
-    glVertex2i(-500, -500);
-    glVertex2i(200, 300);
-  glEnd();
-  */
-
-  // Egyenes vonal kirajzolasa
   if (drawStraightLine)
   {
     glColor3f(0,1,0);
@@ -276,7 +267,6 @@ void onDisplay( ) {
 	  nwDrawParabola(parabolaPoints, false);
   }
 
-  // Korok kirajzolasa
   for (int i = 0;i<controlPoints.size;i++)
   {
 	  nwdrawCircle(controlPoints.points[i], RADIUS, RED_COLOR, WHITE_COLOR);
