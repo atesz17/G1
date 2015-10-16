@@ -126,10 +126,7 @@ const int screenWidth = 600;  // alkalmazás ablak felbontása
 const int screenHeight = 600;
 
 const Vector worldSize(1000, 1000);
-
-const float RADIUS = 5.0f;
-const Color RED_COLOR(1, 0, 0);
-const Color WHITE_COLOR(1, 1, 1);
+const int MAX_CTRL_POINTS_NUM = 50;
 
 bool startMovingAround = false;
 long animationStartTime = 0;
@@ -137,31 +134,69 @@ long animationStartTime = 0;
 Vector scaling(1, 1, 1);
 Vector translating(0, 0, 0);
 
-const int MAX_CTRL_POINTS_NUM = 50;
-
-struct ControlPoints  {
-  Vector points[MAX_CTRL_POINTS_NUM];
-  int size;
-
-  ControlPoints() : size(0) {}
-
-  void push(Vector v)
-  {
-    if (size < MAX_CTRL_POINTS_NUM)
-    {
-      points[size] = v;
-      size++;
-    }
-  }
+struct nwIDrawable
+{
+	virtual void drawMe() const = 0;
 };
 
-ControlPoints controlPoints;
+struct nwCircle : public nwIDrawable
+{
+	Vector center;
+	float radius;
+	int resolution;
+	Color fillColor;
+	Color borderColor;
 
-Vector        straightLinePoints[2];
-bool          drawStraightLine = false;
+	nwCircle(float r=5.0f,
+			int res=16,
+			Color fillC=Color(1, 0, 0),
+			Color borderC=Color(1, 1, 1)) :
+				radius(r),
+				resolution(res),
+				fillColor(fillC),
+				borderColor(borderC) {}
 
-Vector        parabolaPoints[3];
-bool          drawParabola = false;
+	void drawMe() const
+	{
+		glBegin(GL_TRIANGLE_FAN);
+		    glColor3f(fillColor.r, fillColor.g, fillColor.b);
+		    glVertex2f(center.x, center.y);
+		    for(int i = 0;i<=resolution;i++)
+		    {
+		      float angle = float(i) / resolution * 2.0f * M_PI;
+		      glVertex2f(center.x + radius * cos(angle), center.y + radius * sin(angle));
+		    }
+		  glEnd();
+
+		  glBegin(GL_LINE_LOOP);
+		    glColor3f(borderColor.r, borderColor.g, borderColor.b);
+		    for(int i =0;i<resolution;i++)
+		    {
+		      float angle = float(i) / resolution * 2.0f * M_PI;
+		      glVertex2f(center.x + radius * cos(angle), center.y + radius * sin(angle));
+		    }
+		  glEnd();
+	}
+};
+
+class nwControlPoint : public nwCircle
+{
+};
+
+struct nwLine : public nwIDrawable
+{
+	Vector points[2];
+	Color lineColor;
+	nwLine(Color lineC=Color(0, 0, 0)) : lineColor(lineC) {}
+	void drawMe() const
+	{
+		glColor3f(lineColor.r, lineColor.g, lineColor.b);
+		glBegin(GL_LINES);
+			glVertex2f(points[0].x, points[0].y);
+			glVertex2f(points[1].x, points[1].y);
+		glEnd();
+	}
+};
 
 Vector nwWindowToWorld(int x, int y)
 {
@@ -172,6 +207,11 @@ Vector nwWindowToWorld(int x, int y)
   float worldY = (-1) * (y * scaleY - 1.0f/scaling.y * worldSize.y/2 + translating.y);
   return Vector(worldX, worldY);
 }
+
+struct nwParabola : public nwIDrawable
+{
+
+};
 
 void nwDrawParabola(Vector parabolaPoints[], bool drawInside=true)
 {
@@ -206,31 +246,78 @@ void nwDrawParabola(Vector parabolaPoints[], bool drawInside=true)
 	glEnd();
 }
 
-void nwdrawCircle(Vector center, float radius, Color fillColor, Color borderColor)
+struct nwScene : public nwIDrawable
 {
-  int res = 16;
+	nwControlPoint ctrlPoints[MAX_CTRL_POINTS_NUM];
+	int ctrlPointsCount;
+	nwLine line;
 
-  glBegin(GL_TRIANGLE_FAN);
-    glColor3f(fillColor.r, fillColor.g, fillColor.b);
-    glVertex2f(center.x, center.y);
-    for(int i = 0;i<=res;i++)
-    {
-      float angle = float(i) / res * 2.0f * M_PI;
-      glVertex2f(center.x + radius * cos(angle), center.y + radius * sin(angle));
-    }
-  glEnd();
+	bool drawLine;
+	bool drawParabola;
+	bool drawCRSpline;
 
-  glBegin(GL_LINE_LOOP);
-    glColor3f(borderColor.r, borderColor.g, borderColor.b);
-    for(int i =0;i<res;i++)
-    {
-      float angle = float(i) / res * 2.0f * M_PI;
-      glVertex2f(center.x + radius * cos(angle), center.y + radius * sin(angle));
-    }
-  glEnd();
-}
+	nwScene(int ctrlPC=0) :
+		ctrlPointsCount(0),
+		drawLine(false),
+		drawParabola(false),
+		drawCRSpline(false) {}
 
+	void changeState()
+	{
+		if (ctrlPointsCount > 2)
+		{
+			drawParabola = true;
+		}
+		else if(ctrlPointsCount > 1)
+		{
+			drawLine = true;
+			line.points[0] = ctrlPoints[0].center;
+			line.points[1] = ctrlPoints[1].center;
+			drawCRSpline = true;
+		}
+	}
 
+	bool registerPoint(int windowPosX, int windowPosY)
+	{
+		if (ctrlPointsCount < MAX_CTRL_POINTS_NUM)
+		{
+			ctrlPoints[ctrlPointsCount].center.x = nwWindowToWorld(windowPosX, windowPosY).x;
+			ctrlPoints[ctrlPointsCount].center.y = nwWindowToWorld(windowPosX, windowPosY).y;
+			ctrlPointsCount++;
+			changeState();
+			return true;
+		}
+		return false;
+	}
+	void drawMe() const
+	{
+		if (drawParabola)
+		{
+			Vector parabolaPoints[3];
+			parabolaPoints[0] = ctrlPoints[0].center;
+			parabolaPoints[1] = ctrlPoints[1].center;
+			parabolaPoints[2] = ctrlPoints[2].center;
+			glColor3f(1, 1, 0);
+			nwDrawParabola(parabolaPoints);
+			glColor3f(0, 1, 1);
+			nwDrawParabola(parabolaPoints, false);
+		}
+		if (drawLine)
+		{
+			line.drawMe();
+		}
+		if (drawCRSpline)
+		{
+
+		}
+		for (int i =0;i<ctrlPointsCount;i++)
+		{
+			ctrlPoints[i].drawMe();
+		}
+	}
+};
+
+nwScene scene;
 
 // Inicializacio, a program futasanak kezdeten, az OpenGL kontextus letrehozasa utan hivodik meg (ld. main() fv.)
 void onInitialization( ) {
@@ -250,27 +337,7 @@ void onDisplay( ) {
   glScalef(scaling.x, scaling.y, 1);
   glTranslatef(translating.x, translating.y, 0);
 
-  if (drawStraightLine)
-  {
-    glColor3f(0,1,0);
-    glBegin(GL_LINES);
-      glVertex2f(straightLinePoints[0].x, straightLinePoints[0].y);
-      glVertex2f(straightLinePoints[1].x, straightLinePoints[1].y);
-    glEnd();
-  }
-
-  if (drawParabola)
-  {
-	  glColor3f(1, 1, 0);
-	  nwDrawParabola(parabolaPoints);
-	  glColor3f(0, 1, 1);
-	  nwDrawParabola(parabolaPoints, false);
-  }
-
-  for (int i = 0;i<controlPoints.size;i++)
-  {
-	  nwdrawCircle(controlPoints.points[i], RADIUS, RED_COLOR, WHITE_COLOR);
-  }
+  scene.drawMe();
 
   glutSwapBuffers();     				// Buffercsere: rajzolas vege
 
@@ -302,23 +369,8 @@ void onKeyboardUp(unsigned char key, int x, int y) {
 void onMouse(int button, int state, int x, int y) {
     if (button == GLUT_LEFT_BUTTON && state == GLUT_DOWN)
     {
-      nwLogMousePos(x, y);
-      Vector clickPos = nwWindowToWorld(x, y);
-      controlPoints.push(Vector(clickPos.x, clickPos.y));
-      if (controlPoints.size == 2 && !drawStraightLine)
-      {
-    	  straightLinePoints[0] = controlPoints.points[0];
-    	  straightLinePoints[1] = controlPoints.points[1];
-    	  drawStraightLine = true;
-      }
-      if (controlPoints.size == 3 && !drawParabola)
-      {
-    	  parabolaPoints[0] = straightLinePoints[0];
-    	  parabolaPoints[1] = straightLinePoints[1];
-    	  parabolaPoints[2] = controlPoints.points[2];
-    	  drawParabola = true;
-	  }
-      glutPostRedisplay();
+    	scene.registerPoint(x, y);
+    	glutPostRedisplay();
     }
 }
 
