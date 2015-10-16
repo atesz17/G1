@@ -181,9 +181,24 @@ struct nwCircle : public nwIDrawable
 
 struct nwControlPoint : public nwCircle
 {
-	float velocity;
+	Vector velocity;
 	long time;
+
+	void calculateVelocity(nwControlPoint ri, nwControlPoint rj, nwControlPoint rk)
+	{
+		long ti = ri.time;
+		long tj = rj.time;
+		long tk = rk.time;
+		float firstMemX = 0.5 * (rk.center.x - rj.center.x) / (tk - tj);
+		float firstMemY = 0.5 * (rk.center.y - rj.center.y) / (tk - tj);
+		float secMemX = 0.5 * (rj.center.x - ri.center.x) / (tj - ti);
+		float secMemY = 0.5 * (rj.center.y - ri.center.y) / (tj - ti);
+		velocity.x = firstMemX + secMemX;
+		velocity.y = firstMemY + secMemY;
+	}
 };
+
+
 
 struct nwLine : public nwIDrawable
 {
@@ -243,7 +258,7 @@ void nwDrawParabola(Vector parabolaPoints[], bool drawInside=true)
 	glEnd();
 }
 
-struct nwScene : public nwIDrawable
+struct nwScene
 {
 	nwControlPoint ctrlPoints[MAX_CTRL_POINTS_NUM];
 	int cpsCount;
@@ -259,19 +274,68 @@ struct nwScene : public nwIDrawable
 		drawParabola(false),
 		drawCRSpline(false) {}
 
+	nwControlPoint Hermite(nwControlPoint r00, Vector v0, long t0,
+			nwControlPoint r11, Vector v1, long t1,
+			long t)
+	{
+		Vector r0 = r00.center;
+		Vector r1 = r11.center;
+
+		Vector a0 = r00.center;
+		Vector a1 = r00.velocity;
+		Vector a2;
+		a2.x = (3*(r1.x-r0.x)/pow(t1-t, 2)) - ((v1.x + 2*v0.x)/(t1 - t0));
+		a2.y = (3*(r1.y-r0.y)/pow(t1-t, 2)) - ((v1.y + 2*v0.y)/(t1 - t0));
+		Vector a3;
+		a3.x = (2*(r0.x-r1.x)/pow(t1-t0, 3)) + ((v1.x+v0.x)/pow(t1-t0, 2));
+		a3.y = (2*(r0.y-r1.y)/pow(t1-t0, 3)) + ((v1.y+v0.y)/pow(t1-t0, 2));
+
+		nwControlPoint ret;
+		ret.center.x = a3.x*pow(t-t0, 3) + a2.x*(t-t0, 2) + a1.x*(t-t0) + a0.x;
+		ret.center.y = a3.y*pow(t-t0, 3) + a2.y*(t-t0, 2) + a1.y*(t-t0) + a0.y;
+		ret.velocity.x = 3*a3.x*pow(t-t0, 2) + 2*a2.x*(t-t0) + a1.x;
+		ret.velocity.y = 3*a3.y*pow(t-t0, 2) + 2*a2.y*(t-t0) + a1.y;
+		return ret;
+	}
+
+	nwControlPoint r(long t)
+	{
+		for (int i =0;i<cpsCount-1;i++)
+		{
+			if (ctrlPoints[i].time <= t && ctrlPoints[i+1].time)
+			{
+				return Hermite(ctrlPoints[i], ctrlPoints[i].velocity, ctrlPoints[i].time,
+						ctrlPoints[i+1], ctrlPoints[i+1].velocity, ctrlPoints[i+1].time,
+						t);
+			}
+		}
+	}
+
+	void nwDrawCRSpline()
+	{
+		glBegin(GL_LINES);
+		glColor3f(0.8, 0.7, 0.6);
+		for(long t=ctrlPoints[0].time;t<ctrlPoints[cpsCount-1].time;t+=50)
+		{
+			glVertex2f(r(t).center.x, r(t).center.y);
+		}
+		glEnd();
+	}
+
 	void changeState()
 	{
 		ctrlPoints[cpsCount-1].time = glutGet(GLUT_ELAPSED_TIME);
 		if (cpsCount > 2)
 		{
 			drawParabola = true;
+			drawCRSpline = true;
+			ctrlPoints[cpsCount - 2].calculateVelocity(ctrlPoints[cpsCount-3], ctrlPoints[cpsCount-2], ctrlPoints[cpsCount-1]);
 		}
 		else if(cpsCount > 1)
 		{
 			drawLine = true;
 			line.points[0] = ctrlPoints[0].center;
 			line.points[1] = ctrlPoints[1].center;
-			drawCRSpline = true;
 		}
 	}
 
@@ -287,7 +351,7 @@ struct nwScene : public nwIDrawable
 		}
 		return false;
 	}
-	void drawMe() const
+	void drawMe()
 	{
 		if (drawParabola)
 		{
@@ -306,7 +370,7 @@ struct nwScene : public nwIDrawable
 		}
 		if (drawCRSpline)
 		{
-
+			nwDrawCRSpline();
 		}
 		for (int i =0;i<cpsCount;i++)
 		{
