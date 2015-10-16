@@ -179,8 +179,10 @@ struct nwCircle : public nwIDrawable
 	}
 };
 
-class nwControlPoint : public nwCircle
+struct nwControlPoint : public nwCircle
 {
+	float velocity;
+	long time;
 };
 
 struct nwLine : public nwIDrawable
@@ -207,11 +209,6 @@ Vector nwWindowToWorld(int x, int y)
   float worldY = (-1) * (y * scaleY - 1.0f/scaling.y * worldSize.y/2 + translating.y);
   return Vector(worldX, worldY);
 }
-
-struct nwParabola : public nwIDrawable
-{
-
-};
 
 void nwDrawParabola(Vector parabolaPoints[], bool drawInside=true)
 {
@@ -249,7 +246,7 @@ void nwDrawParabola(Vector parabolaPoints[], bool drawInside=true)
 struct nwScene : public nwIDrawable
 {
 	nwControlPoint ctrlPoints[MAX_CTRL_POINTS_NUM];
-	int ctrlPointsCount;
+	int cpsCount;
 	nwLine line;
 
 	bool drawLine;
@@ -257,18 +254,19 @@ struct nwScene : public nwIDrawable
 	bool drawCRSpline;
 
 	nwScene(int ctrlPC=0) :
-		ctrlPointsCount(0),
+		cpsCount(0),
 		drawLine(false),
 		drawParabola(false),
 		drawCRSpline(false) {}
 
 	void changeState()
 	{
-		if (ctrlPointsCount > 2)
+		ctrlPoints[cpsCount-1].time = glutGet(GLUT_ELAPSED_TIME);
+		if (cpsCount > 2)
 		{
 			drawParabola = true;
 		}
-		else if(ctrlPointsCount > 1)
+		else if(cpsCount > 1)
 		{
 			drawLine = true;
 			line.points[0] = ctrlPoints[0].center;
@@ -279,11 +277,11 @@ struct nwScene : public nwIDrawable
 
 	bool registerPoint(int windowPosX, int windowPosY)
 	{
-		if (ctrlPointsCount < MAX_CTRL_POINTS_NUM)
+		if (cpsCount < MAX_CTRL_POINTS_NUM)
 		{
-			ctrlPoints[ctrlPointsCount].center.x = nwWindowToWorld(windowPosX, windowPosY).x;
-			ctrlPoints[ctrlPointsCount].center.y = nwWindowToWorld(windowPosX, windowPosY).y;
-			ctrlPointsCount++;
+			ctrlPoints[cpsCount].center.x = nwWindowToWorld(windowPosX, windowPosY).x;
+			ctrlPoints[cpsCount].center.y = nwWindowToWorld(windowPosX, windowPosY).y;
+			cpsCount++;
 			changeState();
 			return true;
 		}
@@ -310,7 +308,7 @@ struct nwScene : public nwIDrawable
 		{
 
 		}
-		for (int i =0;i<ctrlPointsCount;i++)
+		for (int i =0;i<cpsCount;i++)
 		{
 			ctrlPoints[i].drawMe();
 		}
