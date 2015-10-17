@@ -291,8 +291,8 @@ struct nwScene
 		a3.y = (2*(r0.y-r1.y)/pow(t1-t0, 3)) + ((v1.y+v0.y)/pow(t1-t0, 2));
 
 		nwControlPoint ret;
-		ret.center.x = a3.x*pow(t-t0, 3) + a2.x*(t-t0, 2) + a1.x*(t-t0) + a0.x;
-		ret.center.y = a3.y*pow(t-t0, 3) + a2.y*(t-t0, 2) + a1.y*(t-t0) + a0.y;
+		ret.center.x = a3.x * pow(t-t0, 3) + a2.x * pow(t-t0, 2) + a1.x * (t-t0) + a0.x;
+		ret.center.y = a3.y * pow(t-t0, 3) + a2.y * pow(t-t0, 2) + a1.y * (t-t0) + a0.y;
 		ret.velocity.x = 3*a3.x*pow(t-t0, 2) + 2*a2.x*(t-t0) + a1.x;
 		ret.velocity.y = 3*a3.y*pow(t-t0, 2) + 2*a2.y*(t-t0) + a1.y;
 		return ret;
@@ -302,20 +302,21 @@ struct nwScene
 	{
 		for (int i =0;i<cpsCount-1;i++)
 		{
-			if (ctrlPoints[i].time <= t && ctrlPoints[i+1].time)
+			if (ctrlPoints[i].time <= t && t <= ctrlPoints[i+1].time)
 			{
 				return Hermite(ctrlPoints[i], ctrlPoints[i].velocity, ctrlPoints[i].time,
 						ctrlPoints[i+1], ctrlPoints[i+1].velocity, ctrlPoints[i+1].time,
 						t);
 			}
 		}
+		return nwControlPoint();
 	}
 
 	void nwDrawCRSpline()
 	{
-		glBegin(GL_LINES);
-		glColor3f(0.8, 0.7, 0.6);
-		for(long t=ctrlPoints[0].time;t<ctrlPoints[cpsCount-1].time;t+=50)
+		glBegin(GL_POINTS);
+		glColor3f(0.1f, 0.2f, 0.3f);
+		for(long t=ctrlPoints[0].time;t<ctrlPoints[cpsCount-1].time;t+=10)
 		{
 			glVertex2f(r(t).center.x, r(t).center.y);
 		}
